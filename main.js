@@ -153,7 +153,7 @@ class LandingSimulator {
             // Variáveis de simulação
             this.planeState = {
                 speed: 9,
-                altitude: 400,
+                altitude: 100,
                 fuel: 100,
                 rotation: 0, // Yaw
                 pitch: 0,    // Pitch
@@ -1032,7 +1032,7 @@ class LandingSimulator {
 
 
     restartGame() {
-        // Resetar variáveis do jogo
+        // Resetar variáveis do jogo e estatísticas de voo
         this.gameOver = false;
         this.gameOverDisplayed = false;
         this.finalAnalysisDisplayed = false;
@@ -1040,11 +1040,19 @@ class LandingSimulator {
         this.playerHealth = 100;
         this.hasFlew = false;
         this.hasTouchdownData = false;
+        this._wasOnGround = true;
+        this.touchdownSpeed = 0;
+        this.touchdownXDiff = 0;
+        this.touchdownPitch = 0;
+        this.touchdownRoll = 0;
+        this.cameraShake = { frames: 0, totalFrames: 0, intensity: 0 };
+        this.cockpitShake = { frames: 0, totalFrames: 0, intensity: 0 };
 
-        // Resetar posição e estado do avião
-        this.airplane.position.set(0, 100, 0);
+        // Resetar posição e rotação inicial do avião (como no início do jogo em createPlane)
+        this.airplane.position.set(0, 100, -300);
+        this.airplane.rotation.set(0, 0, 0);
         this.planeState = {
-            speed: 7,
+            speed: 9,
             altitude: 100,
             fuel: 100,
             rotation: 0,
@@ -1070,6 +1078,11 @@ class LandingSimulator {
         this.landingActionTriggered = false;
         this.updateEngineAudio();
 
+        // Resetar cidade (restaurar prédios destruídos)
+        if (this.cityManager) {
+            this.cityManager.reset();
+        }
+
         // Limpar inimigos e resetar score
         this.enemyManager.reset();
 
@@ -1084,16 +1097,21 @@ class LandingSimulator {
         this.missionManager.reset();
 
         this.updateHealthBar(); // Resetar a barra de vida visualmente
+        this.updateHUD(); // Atualizar HUD visualmente
 
-        // Esconder tela de game over
+        // Esconder tela de game over se visível
         const gameOverScreen = document.getElementById('gameOverScreen');
-        gameOverScreen.classList.remove('visible');
-        setTimeout(() => {
-            gameOverScreen.style.display = 'none';
-        }, 500); // Tempo para a transição de opacidade
+        if (gameOverScreen) {
+            gameOverScreen.classList.remove('visible');
+            setTimeout(() => {
+                gameOverScreen.style.display = 'none';
+            }, 500);
+        }
 
         // Esconder mensagem de pouso
-        this.landingMessage.style.display = 'none';
+        if (this.landingMessage) {
+            this.landingMessage.style.display = 'none';
+        }
         this.stopEngineAudio();
 
         // Criar novos inimigos e tanques para a primeira fase
@@ -1105,9 +1123,6 @@ class LandingSimulator {
 
         // Mostra o modal da primeira missão
         this.showMissionStartScreen(0);
-
-        // Reiniciar animação
-        this.animate();
     }
 
 

@@ -78,6 +78,7 @@ export default class TankManager {
         this.tanks = [];
         this.tankBullets.forEach(b => this.scene.remove(b));
         this.tankBullets = [];
+        this.tanksPerPhase = 3;
     }
 
     startNextPhase(playerPos) {

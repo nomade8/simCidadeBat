@@ -614,6 +614,7 @@ export default class EnemyManager {
         this.debrisParticles = [];
 
         this.score = 0;
+        this.enemiesPerPhase = 7;
         this.gameState = 'playing';
         this.updateScoreDisplay();
     }

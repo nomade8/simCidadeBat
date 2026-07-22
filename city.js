@@ -341,7 +341,7 @@ export default class CityManager {
                                 );
 
                                 this.buildings.push({
-                                    type, index, health: config.health, destroyed: false, box, position: dummy.position.clone()
+                                    type, index, health: config.health, initialHealth: config.health, destroyed: false, box, position: dummy.position.clone(), initialMatrix: dummy.matrix.clone()
                                 });
                                 counts[type]++;
                             }
@@ -486,5 +486,20 @@ export default class CityManager {
         }
 
         return targetsSet;
+    }
+
+    reset() {
+        this.buildings.forEach(b => {
+            b.destroyed = false;
+            b.health = b.initialHealth || 100;
+            b.isTarget = false;
+            const mesh = this.instancedMeshes[b.type];
+            if (mesh && b.initialMatrix) {
+                mesh.setMatrixAt(b.index, b.initialMatrix);
+            }
+        });
+        Object.values(this.instancedMeshes).forEach(m => {
+            m.instanceMatrix.needsUpdate = true;
+        });
     }
 }

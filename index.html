@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bat City - Flight Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="hud">
+        <div class="hud-item">
+            <span class="label">SPEED</span>
+            <span id="speed" class="value">0</span> <span class="unit">km/h</span>
+        </div>
+        <div class="hud-item">
+            <span class="label">ALTITUDE</span>
+            <span id="altitude" class="value">0</span> <span class="unit">m</span>
+        </div>
+        <div class="hud-item">
+            <span class="label">FUEL</span>
+            <div class="bar-container">
+                <div id="fuelBar" class="bar fuel"></div>
+            </div>
+            <span id="fuel" class="value">100</span>%
+        </div>
+        <div class="hud-item">
+            <span class="label">HULL INTEGRITY</span>
+            <div class="bar-container">
+                <div id="healthBar" class="bar health"></div>
+            </div>
+        </div>
+        <div class="hud-item score-container">
+            <span class="label">SCORE</span>
+            <span id="score" class="value">0</span>
+        </div>
+        <div class="hud-item mission-status">
+            <span class="label">MISSION / TARGETS</span>
+            <div class="mission-inline">
+                <span id="missionNumber" class="value value-sm">1</span><span class="unit">/3</span>
+                <span class="mission-sep">•</span>
+                <span class="mission-key">Targets</span>
+                <span id="targetsHit" class="value value-sm">0</span><span class="unit">/</span><span id="targetsTotal" class="value value-sm">7</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverScreen" class="overlay">
+        <div class="overlay-content">
+            <h1>MISSION OVER</h1>
+            <p id="finalScore">Final Score: 0</p>
+            <button onclick="location.reload()">RESTART</button>
+        </div>
+    </div>
+
+    <div id="controls-hint">
+        <p>Arrow Keys: Pitch & Roll | Space: Throttle Down | X: Accelerate | Z / Click: Fire</p>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>

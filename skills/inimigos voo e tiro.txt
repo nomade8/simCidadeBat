@@ -1,0 +1,151 @@
+---
+name: "enemy-airplane-flight-and-combat"
+description: >
+  Implements smooth, realistic airplane flight mechanics, obstacle avoidance, and combat logic for enemy AI using Three.js. Use this skill when generating or updating enemy movement, boundary handling, mountain avoidance, shooting conditions, and physics-based death spirals.
+---
+
+## Overview
+This skill defines the behavioral and physical rules for enemy airplanes. It ensures enemies fly smoothly without snapping, intelligently steer away from obstacles (like mountains and boundaries) rather than instantly exploding, shoot only when properly aligned with the player, and fall in a realistic parabolic spiral when destroyed.
+
+## Core Guidelines
+
+1. **Smooth Movement & Rotation**: Never snap an enemy's rotation or direction instantly. Always use `Vector3.lerp` for directional changes and clamp `deltaYaw` for rotations. Roll must be proportional to the change in Yaw (tighter turns = more roll).
+2. **Boundary Management**: Enemies must gracefully curve back into the play area when approaching boundaries, rather than bouncing rigidly. 
+3. **Obstacle Avoidance**: Use Raycasting with a "wingspan" (checking center, left, and right) to detect mountains ahead. Enemies must steer away smoothly (preferring lateral movement, falling back to vertical).
+4. **Line-of-Sight Shooting**: Enemies can only shoot if three conditions are met: Cooldown has passed, Player is within `shootRange`, and the Dot Product between the enemy's forward vector and the direction to the player is `> 0.7` (meaning the enemy is actually facing the player).
+5. **Death Physics**: When dying, enemies do not disappear instantly. They enter a parabolic death spiral, maintaining horizontal velocity while accelerating downwards with gravity, applying a continuous roll, and emitting smoke until they hit the ground.
+
+## Step-by-Step Implementation
+
+### 1. Direction and Steering
+* Calculate the vector towards the player.
+* Add a slight randomized vector to prevent robotic tracking.
+* Lerp the enemy's current `moveDirection` towards this new vector.
+* Check X and Z boundaries: if near a boundary, calculate a tangent vector and lerp the direction inwards.
+
+### 2. Smooth Rotation (Yaw & Roll)
+* Project the `moveDirection` onto the XZ plane.
+* Calculate the target Yaw using `Math.atan2(dir.x, dir.z)`.
+* Calculate the difference between current Yaw and target Yaw, normalize it between `-PI` and `PI`, and clamp it to a maximum turn speed.
+* Calculate Roll by multiplying the Yaw delta by a factor, clamping it to a maximum roll angle, and lerping the current roll to this target.
+
+### 3. Combat Logic
+* Calculate distance to the player.
+* If `distance <= shootRange` and `now - lastShootTime > enemyShootCooldown`:
+  * Get the enemy's world direction (`enemyForward`).
+  * Get the normalized direction to the player.
+  * Calculate `enemyForward.dot(directionToPlayer)`.
+  * If dot product > 0.7, spawn a projectile.
+
+### 4. Death Spiral
+* When health reaches 0, flag `isDying = true`.
+* Initialize a velocity vector based on current speed and direction, adding a slight negative Y to start the dive.
+* On each frame, subtract gravity from the Y velocity, update position, and continuously add to the `roll` rotation.
+* Raycast downwards to detect the ground and trigger the explosion effect.
+
+## Code Examples
+
+### Smooth Rotation and Curving
+```javascript
+// Calculate target yaw based on XZ movement
+const moveXZ = enemy.moveDirection.clone();
+moveXZ.y = 0;
+moveXZ.normalize();
+
+const targetYaw = Math.atan2(moveXZ.x, moveXZ.z);
+if (enemy._yaw === undefined) enemy._yaw = targetYaw;
+
+// Smooth yaw interpolation with wrap-around correction
+let deltaYaw = targetYaw - enemy._yaw;
+if (deltaYaw > Math.PI) deltaYaw -= 2 * Math.PI;
+if (deltaYaw < -Math.PI) deltaYaw += 2 * Math.PI;
+
+const maxYawChange = 0.05; // Maximum turn speed per frame
+deltaYaw = THREE.MathUtils.clamp(deltaYaw, -maxYawChange, maxYawChange);
+enemy._yaw += deltaYaw;
+enemy._yaw = (enemy._yaw + Math.PI) % (2 * Math.PI) - Math.PI;
+
+// Roll follows the curve (proportional to deltaYaw)
+const maxRoll = 0.7;
+let targetRoll = THREE.MathUtils.clamp(-deltaYaw * 20, -maxRoll, maxRoll);
+if (!enemy._roll) enemy._roll = 0;
+enemy._roll = THREE.MathUtils.lerp(enemy._roll, targetRoll, 0.08);
+
+// Apply rotation
+enemy.mesh.rotation.set(0, enemy._yaw, enemy._roll);
+enemy.mesh.rotation.z = enemy._roll;
+```
+
+### Combat / Shooting Check
+```javascript
+const now = Date.now();
+if (now - enemy.lastShootTime > this.enemyShootCooldown) {
+    const distanceToPlayer = enemy.mesh.position.distanceTo(playerPosition);
+    
+    if (distanceToPlayer <= this.shootRange) {
+        const enemyForward = new THREE.Vector3();
+        enemy.mesh.getWorldDirection(enemyForward);
+        
+        const directionToPlayer = new THREE.Vector3()
+            .subVectors(playerPosition, enemy.mesh.position)
+            .normalize();
+            
+        const dotProduct = enemyForward.dot(directionToPlayer);
+
+        // Only shoot if facing the player (dot > 0.7)
+        if (dotProduct > 0.7) {
+            const shootPosition = enemy.mesh.position.clone().add(enemyForward.multiplyScalar(2));
+            this.shoot(shootPosition, directionToPlayer, true);
+            enemy.lastShootTime = now;
+        }
+    }
+}
+```
+
+### Death Physics Update
+```javascript
+if (enemy.isDying && enemy.death) {
+    const now = Date.now();
+    const dt = enemy._deathLastTime ? (now - enemy._deathLastTime) / 1000 : 0.016;
+    enemy._deathLastTime = now;
+
+    // Apply gravity to vertical velocity
+    enemy.death.velocity.y -= enemy.death.gravity * dt;
+    
+    // Update position
+    enemy.mesh.position.addScaledVector(enemy.death.velocity, dt);
+    
+    // Calculate manual rotation for falling
+    const velocity = enemy.death.velocity.clone().normalize();
+    const yaw = Math.atan2(velocity.x, velocity.z);
+    const pitch = Math.asin(-velocity.y);
+    
+    // Apply continuous roll spin
+    if (!enemy._totalRoll) enemy._totalRoll = 0;
+    enemy._totalRoll += enemy.death.rollSpin * dt;
+    
+    enemy.mesh.rotation.set(pitch, yaw, enemy._totalRoll);
+    
+    // Make mesh look at velocity vector, then re-apply roll
+    const lookAtPosition = new THREE.Vector3().copy(enemy.mesh.position).add(enemy.death.velocity);
+    enemy.mesh.lookAt(lookAtPosition);
+    enemy.mesh.rotateZ(enemy._totalRoll);
+    
+    // Check ground collision
+    const downHit = this.raycastMountains(enemy.mesh.position.clone(), new THREE.Vector3(0, -1, 0), 1000);
+    const groundY = (downHit && downHit.point) ? downHit.point.y : 1;
+    
+    if (enemy.mesh.position.y <= groundY + 0.1) {
+        this.createExplosion(enemy.mesh.position.clone());
+        // Trigger removal logic...
+    }
+    continue; // Skip normal movement logic
+}
+```
+
+## Anti-patterns
+
+* **Instant Snapping (`mesh.lookAt(player)` directly on every frame)**: This causes robotic, jarring movement. Always lerp the direction vector and calculate yaw manually with clamping.
+* **Shooting Backwards**: Failing to check the Dot Product between the forward vector and the target vector allows enemies to shoot out of their tails.
+* **Exploding on Walls**: Do not instantly kill enemies if they touch a boundary or mountain. They must use raycasting to detect obstacles ahead and apply a steering force to slide along or avoid the surface.
+* **Static Death**: Instantly removing the mesh and spawning an explosion looks cheap. Always use the parabolic death spiral physics to sell the feeling of an aircraft being shot down.

@@ -966,7 +966,7 @@ class LandingSimulator {
     }
 
     setupEngineAudio() {
-        this.engineAudio = new Audio('continuo.mp3');
+        this.engineAudio = new Audio('/continuo.mp3');
         this.engineAudio.loop = true;
         this.engineAudio.volume = 0.60;
         this.engineAudio.preload = 'auto';
@@ -1114,13 +1114,13 @@ class LandingSimulator {
 
     // Reproduz som de explosão
     playExplosionSound() {
-        const audio = new Audio('explosion boa.mp3');
+        const audio = new Audio('/explosion-boa.mp3');
         audio.volume = 0.5;
         audio.play();
     }
     // Reproduz som de tiro do avião do jogador
     playShotgunSound() {
-        const audio = new Audio('tiro.mp3');
+        const audio = new Audio('/tiro.mp3');
         audio.volume = 0.5;
         audio.play();
     }

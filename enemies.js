@@ -13,7 +13,7 @@ const _toPlayer = new THREE.Vector3();
 const _predictedTarget = new THREE.Vector3();
 const _enemyBox = new THREE.Box3();
 
-const _explosionSound = new Audio('explosion boa.mp3');
+const _explosionSound = new Audio('/explosion-boa.mp3');
 _explosionSound.volume = 0.3;
 _explosionSound.preload = 'auto';
 

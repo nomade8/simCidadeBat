@@ -805,11 +805,12 @@ class LandingSimulator {
         this.crosshair.style.top = '50%';
         this.crosshair.style.left = '50%';
         this.crosshair.style.transform = 'translate(-50%, -50%)';
-        this.crosshair.style.width = '40px';
-        this.crosshair.style.height = '40px';
+        this.crosshair.style.width = '80px';
+        this.crosshair.style.height = '80px';
         this.crosshair.style.pointerEvents = 'none';
         this.crosshair.style.display = 'none';
         this.crosshair.style.zIndex = '1000';
+        this.crosshair.style.filter = 'drop-shadow(0px 0px 3px rgba(0, 0, 0, 0.85))';
 
         this.crosshair.innerHTML = `
             <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -825,9 +826,25 @@ class LandingSimulator {
     }
 
     updateCrosshairVisibility() {
-        if (this.crosshair) {
-            this.crosshair.style.display = this.cameraMode === 'cockpit' ? 'block' : 'none';
+        if (!this.crosshair) return;
+        this.crosshair.style.display = (this.cameraMode === 'cockpit' && this.gameStarted && !this.gameOver) ? 'block' : 'none';
+    }
+
+    updateCrosshair() {
+        if (!this.crosshair) return;
+
+        if (this.cameraMode !== 'cockpit' || !this.gameStarted || this.gameOver) {
+            this.crosshair.style.display = 'none';
+            return;
         }
+
+        // Em primeira pessoa: tamanho aumentado para o dobro (80px x 80px) e centralizado no campo de visão
+        this.crosshair.style.display = 'block';
+        this.crosshair.style.width = '80px';
+        this.crosshair.style.height = '80px';
+        this.crosshair.style.left = '50%';
+        this.crosshair.style.top = '50%';
+        this.crosshair.style.transform = 'translate(-50%, -50%)';
     }
 
     updateHUD() {
@@ -1712,6 +1729,9 @@ class LandingSimulator {
         // Update HUD
         this.updateHUD();
 
+        // Atualiza a posição e tamanho da mira (1ª ou 3ª pessoa)
+        this.updateCrosshair();
+
 
 
         // Fazer a luz do sol seguir o jogador para sombras constantes
@@ -1942,6 +1962,7 @@ class LandingSimulator {
             document.body.removeChild(modal);
             this.gameStarted = true;
             this.startEngineAudio();
+            this.updateCrosshairVisibility();
         });
     }
 

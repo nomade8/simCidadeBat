@@ -1529,7 +1529,7 @@ class LandingSimulator {
         // --- Removido o translateZ duplicado que estava aqui ---
 
         // --- Update Yaw, Pitch, and Roll based on key states ---
-        const turnSpeed = 0.01;
+        const turnSpeed = 0.014;
         const pitchSpeed = 0.009;
         const maxPitch = 0.9;
         const maxRoll = 0.85;

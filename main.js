@@ -1533,7 +1533,7 @@ class LandingSimulator {
         const pitchSpeed = 0.009;
         const maxPitch = 0.9;
         const maxRoll = 0.85;
-        const rollLerpFactor = 0.045;
+        const rollLerpFactor = 0.05;
 
 
         let targetRoll = 0;

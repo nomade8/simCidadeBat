@@ -47,7 +47,7 @@ export default class EnemyManager {
         this.enemyBulletLifetimeMs = 3200;
         this.playerVelocity = new THREE.Vector3();
         this.lastPlayerPos = null;
-        this.patrolSpeed = 0.18;
+        this.patrolSpeed = 0.22;
         this.turnSpeed = 0.014; // Curvas mais lentas e suaves
 
         const { instancedMeshes, dummyRoot } = createEnemyInstancedPlanes(scene, this.maxEnemies);
@@ -367,7 +367,7 @@ export default class EnemyManager {
             this.scene.remove(bullet);
             const idx = this.bullets.indexOf(bullet);
             if (idx > -1) this.bullets.splice(idx, 1);
-        }, 2000);
+        }, 3500);
     }
 
     enemyShoot(pos, targetPos) {
